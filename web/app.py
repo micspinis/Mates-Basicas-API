@@ -2,9 +2,40 @@ from flask import Flask, jsonify, request
 #Para construit la API necesitamos los siguientes modulos
 from flask_restful import Api, Resource
 
+#Importar MongoDB
+from pymongo import MongoClient
 
 app = Flask(__name__)
 api = Api(app)
+
+#Inicializando cliente de mondo, usando el mismo nombre que le dimos en el docke compose
+# docker compose para mondo -> db
+# Puerto -> 27017 (puerto por defecto para mongo)
+client = MongoClient("mongodb://db:27017")
+
+# Creando data base
+# client."Nombre de la base de datos"
+db = client.aNewDB
+
+#Creando colleccion
+UserNum = db["UserNum"]
+
+
+#Schemas de los documentos
+UserNum.insert({
+    "num_of_user": 0
+})
+
+
+# Crear una clase que muestre el numero de visitante cuando el usuario entre, el numero de visitante sera almacenado en nuestra DB en la colleccion UserNum en el documento que creamos ahi.
+class Visit(Resource):
+    def get(self):
+        # Query syntax monog para ingresar al campo deseado
+        prev_num = UserNum.find({})[0]['num_of_user']
+        new_num = prev_num + 1
+        #Query syntax "UPDATE" para actualizar la db con el nuevo dato, en python debemos poner el set en comillas por que es una palabra reservada
+        UserNum.update({}, {"$set":{"num_of_user":new_num}})
+        return str("Hello visitor " + str(new_num))
 
 
 #Resources
@@ -163,7 +194,7 @@ api.add_resource(Add, "/add")
 api.add_resource(Subtract, "/subtract")
 api.add_resource(Multiply, "/multiply")
 api.add_resource(Divide, "/division")
-
+api.add_resource(Visit, "/hello")
 
 
 @app.route('/')
